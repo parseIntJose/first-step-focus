@@ -55,7 +55,8 @@ const SignupProfessional = () => {
       });
       toast.success("Cadastro realizado! Aguardando verificação.");
     } catch (error) {
-      toast.error("Erro ao criar conta. Tente novamente.");
+      const errorMessage = error instanceof Error ? error.message : "Erro ao criar conta. Tente novamente.";
+      toast.error(errorMessage);
     }
   };
 

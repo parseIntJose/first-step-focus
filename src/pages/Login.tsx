@@ -43,7 +43,8 @@ const Login = () => {
       await login(data.email, data.password);
       toast.success("Login realizado com sucesso!");
     } catch (error) {
-      toast.error("Erro ao fazer login. Tente novamente.");
+      const errorMessage = error instanceof Error ? error.message : "Erro ao fazer login. Tente novamente.";
+      toast.error(errorMessage);
     }
   };
 
