@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import { Stethoscope } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const signupSchema = z.object({
   fullName: z.string().min(3, "Nome completo é obrigatório"),
@@ -27,17 +29,34 @@ const signupSchema = z.object({
 type SignupFormData = z.infer<typeof signupSchema>;
 
 const SignupProfessional = () => {
+  const { signup, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = (data: SignupFormData) => {
-    console.log("Cadastro Profissional:", data);
-    toast.success("Cadastro realizado! Aguardando verificação.");
+  // Redireciona se já estiver autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
+  const onSubmit = async (data: SignupFormData) => {
+    try {
+      await signup({
+        ...data,
+        role: "professional",
+      });
+      toast.success("Cadastro realizado! Aguardando verificação.");
+    } catch (error) {
+      toast.error("Erro ao criar conta. Tente novamente.");
+    }
   };
 
   return (
@@ -173,9 +192,10 @@ const SignupProfessional = () => {
 
               <Button 
                 type="submit" 
+                disabled={isSubmitting}
                 className="w-full bg-gradient-secondary shadow-soft hover:shadow-medium transition-all"
               >
-                Criar Conta Profissional
+                {isSubmitting ? "Criando conta..." : "Criar Conta Profissional"}
               </Button>
             </form>
 

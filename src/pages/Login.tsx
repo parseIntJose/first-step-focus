@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import { Heart } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -18,17 +20,31 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    console.log("Login:", data);
-    toast.success("Login realizado com sucesso!");
+  // Redireciona se já estiver autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      await login(data.email, data.password);
+      toast.success("Login realizado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao fazer login. Tente novamente.");
+    }
   };
 
   return (
@@ -92,9 +108,10 @@ const Login = () => {
 
               <Button 
                 type="submit" 
+                disabled={isSubmitting}
                 className="w-full bg-gradient-primary shadow-soft hover:shadow-medium transition-all"
               >
-                Entrar
+                {isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 

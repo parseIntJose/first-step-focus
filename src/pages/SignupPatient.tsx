@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import { User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const signupSchema = z.object({
   fullName: z.string().min(3, "Nome completo é obrigatório"),
@@ -25,17 +27,34 @@ const signupSchema = z.object({
 type SignupFormData = z.infer<typeof signupSchema>;
 
 const SignupPatient = () => {
+  const { signup, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = (data: SignupFormData) => {
-    console.log("Cadastro Paciente:", data);
-    toast.success("Cadastro realizado com sucesso!");
+  // Redireciona se já estiver autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
+  const onSubmit = async (data: SignupFormData) => {
+    try {
+      await signup({
+        ...data,
+        role: "patient",
+      });
+      toast.success("Cadastro realizado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao criar conta. Tente novamente.");
+    }
   };
 
   return (
@@ -143,9 +162,10 @@ const SignupPatient = () => {
 
               <Button 
                 type="submit" 
+                disabled={isSubmitting}
                 className="w-full bg-gradient-primary shadow-soft hover:shadow-medium transition-all"
               >
-                Criar Conta
+                {isSubmitting ? "Criando conta..." : "Criar Conta"}
               </Button>
             </form>
 
